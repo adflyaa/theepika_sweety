@@ -1,1 +1,182 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>என் Gallery - adflyaa</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+    .c { max-width: 1200px; margin: 0 auto; }
+    h1 { text-align: center; color: #60a5fa; }
+    .s { text-align: center; color: #94a3b8; }
 
+    .up { background: #1e293b; padding: 20px; border-radius: 12px; margin: 20px 0; display: none; }
+    .up.s { display: block; }
+    .d { border: 2px dashed #475569; padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; }
+    .d.g { border-color: #60a5fa; background: #1e3a8a20; }
+    .p img, .p video { max-height: 180px; margin: 10px 0; border-radius: 8px; }
+    input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #475569; }
+    button { background: #3b82f6; color: white; border: none; font-weight: bold; cursor: pointer; }
+    button:disabled { background: #475569; }
+
+    .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+    .cd { background: #1e293b; border-radius: 12px; overflow: hidden; }
+    .cd:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+    .m { width: 100%; height: 220px; object-fit: cover; background: #334155; }
+    .i { padding: 15px; }
+    .n { font-weight: bold; color: #60a5fa; margin-bottom: 5px; }
+    .de { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 10px; }
+    .st { display: flex; justify-content: space-between; font-size: 0.9rem; }
+    .l { background: #334155; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    .l.k { background: #fecaca; color: #dc2626; }
+    .a { display: flex; gap: 8px; margin-top: 10px; }
+    .b { flex: 1; padding: 10px; font-size: 0.9rem; border-radius: 6px; }
+
+    .e { text-align: center; padding: 50px; color: #64748b; }
+    .t { position: fixed; top: 20px; right: 20px; padding: 14px 20px; background: #10b981; color: white; border-radius: 8px; z-index: 1000; animation: s 0.3s; }
+    .t.e { background: #ef4444; }
+    @keyframes s { from { transform: translateX(100px); opacity: 0; } to { transform: 0; opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="c">
+    <h1>என் Gallery</h1>
+    <p class="s">உனக்கு மட்டும் தெரியும்... ஆனால் share பண்ணலாம்</p>
+
+    <div class="up" id="u">
+      <div class="d" id="d">கோப்பை இழுத்து விடு அல்லது கிளிக் செய்
+        <input type="file" id="f" accept="image/*,video/*" hidden />
+      </div>
+      <div class="p" id="p"></div>
+      <input type="text" id="n" placeholder="பெயர்" />
+      <textarea id="de" placeholder="விளக்கம்..."></textarea>
+      <button id="ub" disabled>பதிவேற்று</button>
+    </div>
+
+    <div class="g" id="g"></div>
+  </div>
+
+  <script>
+    const R = 'adflyaa/my-gallery'; // உன் username + repo
+    const P = 'docs/data.json';
+    const PASS = 'uu934587kk'; // உன் password
+    let files = [];
+    let likes = JSON.parse(localStorage.getItem('l') || '{}');
+
+    const pwd = prompt('Password?');
+    if (pwd === PASS) document.getElementById('u').classList.add('s');
+
+    async function load() {
+      try {
+        const res = await fetch(`https://raw.githubusercontent.com/${R}/main/${P}`);
+        files = await res.json();
+        r();
+        v();
+      } catch {
+        document.getElementById('g').innerHTML = '<div class="e">இன்னும் கோப்புகள் இல்லை</div>';
+      }
+    }
+
+    function r() {
+      const id = new URLSearchParams(location.search).get('id');
+      document.getElementById('g').innerHTML = files.map((f, i) => `
+        <div class="cd" ${f.id === id ? 'style="border:2px solid #60a5fa;"' : ''}>
+          ${f.t.startsWith('image') ? `<img src="${f.d}" class="m">` : `<video src="${f.d}" class="m" controls></video>`}
+          <div class="i">
+            <div class="n">${f.n}</div>
+            ${f.de ? `<div class="de">${f.de}</div>` : ''}
+            <div class="st">
+              <span>Views: ${f.v}</span>
+              <div class="l ${likes[f.id] ? 'k' : ''}" onclick="l(${i})">
+                ${likes[f.id] ? 'Liked' : 'Like'} ${f.l}
+              </div>
+            </div>
+            <div class="a">
+              <button class="b" style="background:#10b981" onclick="dl(${i})">பதிவிறக்கு</button>
+              <button class="b" style="background:#3b82f6" onclick="sh(${i})">Share</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function l(i) {
+      if (likes[files[i].id]) return t('ஏற்கனவே like போட்டாய்!');
+      files[i].l++;
+      likes[files[i].id] = true;
+      localStorage.setItem('l', JSON.stringify(likes));
+      u();
+      r();
+    }
+
+    function sh(i) {
+      const url = location.origin + location.pathname + '?id=' + files[i].id;
+      navigator.clipboard.writeText(url);
+      t('Link copied! WhatsApp-ல் paste செய்');
+      if (navigator.share) navigator.share({ url });
+    }
+
+    function dl(i) {
+      const a = document.createElement('a');
+      a.href = files[i].d; a.download = files[i].n; a.click();
+    }
+
+    function v() {
+      const s = JSON.parse(sessionStorage.getItem('s') || '{}');
+      files.forEach(f => { if (!s[f.id]) { f.v++; s[f.id] = true; } });
+      sessionStorage.setItem('s', JSON.stringify(s));
+      u();
+    }
+
+    async function u() {
+      if (pwd !== PASS) return;
+      await fetch(`https://api.github.com/repos/${R}/contents/${P}`, {
+        method: 'PUT',
+        headers: { Authorization: 'token GH_PAT_WILL_BE_HERE', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update',
+          content: btoa(unescape(encodeURIComponent(JSON.stringify(files)))),
+          sha: (await (await fetch(`https://api.github.com/repos/${R}/contents/${P}`)).json()).sha
+        })
+      });
+    }
+
+    document.getElementById('d').onclick = () => document.getElementById('f').click();
+    document.getElementById('f').onchange = e => {
+      const file = e.target.files[0];
+      const r = new FileReader();
+      r.onload = ev => {
+        document.getElementById('p').innerHTML = file.type.startsWith('image') ?
+          `<img src="${ev.target.result}">` : `<video src="${ev.target.result}" controls></video>`;
+        document.getElementById('ub').disabled = false;
+      };
+      r.readAsDataURL(file);
+    };
+
+    document.getElementById('ub').onclick = () => {
+      const file = document.getElementById('f').files[0];
+      const n = document.getElementById('n').value || file.name;
+      const de = document.getElementById('de').value;
+      const r = new FileReader();
+      r.onload = ev => {
+        files.unshift({ id: Date.now() + '', n, de, d: ev.target.result, t: file.type, l: 0, v: 0 });
+        u(); load(); t('பதிவேற்றம் வெற்றி!');
+        document.getElementById('p').innerHTML = '';
+        document.getElementById('ub').disabled = true;
+      };
+      r.readAsDataURL(file);
+    };
+
+    function t(m, e=false) {
+      const el = document.createElement('div');
+      el.className = 't' + (e?' e':'');
+      el.textContent = m;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    load();
+  </script>
+</body>
+          </html>
