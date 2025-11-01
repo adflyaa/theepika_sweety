@@ -717,9 +717,13 @@
                                 <button class="btn-action btn-download" onclick="downloadFile(${index})">
                                     <span>⬇️</span> பதிவிறக்கு
                                 </button>
-                                <button class="btn-action btn-share" onclick="shareFile(${index})">
-                                    <span>🔗</span> பகிர்
+                                <button class="btn-action btn-share" onclick="copyDirectLink(${index})">
+                                    <span>🔗</span> Link Copy
                                 </button>
+                            </div>
+                            
+                            <div class="file-link" onclick="copyDirectLink(${index})" title="Click to copy">
+                                🔗 Direct Link: கிளிக் செய்து copy செய்யுங்கள்
                             </div>
                         </div>
                     </div>
@@ -751,18 +755,34 @@
             showToast(`"${file.name}" பதிவிறக்கம் தொடங்குகிறது...`, 'success');
         }
 
-        function shareFile(index) {
+        function copyDirectLink(index) {
             const file = files[index];
-            const shareText = `Tamil File Share\n\nகோப்பு: ${file.name}\n${file.description ? 'விளக்கம்: ' + file.description + '\n' : ''}\n\nLink: ${window.location.href}`;
             
-            if (navigator.share) {
-                navigator.share({
-                    title: file.name,
-                    text: shareText
-                });
-            } else {
-                navigator.clipboard.writeText(shareText);
-                showToast('Link copied! இப்போது எங்கு வேண்டுமானாலும் paste செய்யுங்கள்! 📋', 'success');
+            // Create shareable text with file info
+            const shareText = `📁 ${file.name}\n\n${file.description ? file.description + '\n\n' : ''}🔗 கோப்பைப் பார்க்க: ${window.location.href}\n\n❤️ Likes: ${file.likes} | 👁️ Views: ${file.views}`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareText).then(() => {
+                showToast('✅ Link copied! WhatsApp, Facebook-ல் paste செய்யுங்கள்! 📋', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = shareText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ Link copied! 📋', 'success');
+            });
+            
+            // Also try native share if available (for mobile)
+            if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                setTimeout(() => {
+                    navigator.share({
+                        title: file.name,
+                        text: shareText
+                    }).catch(() => {});
+                }, 500);
             }
         }
 
@@ -776,301 +796,4 @@
         }
     </script>
 </body>
-</html>        .subtitle {
-            color: #6b7280;
-            font-size: 1.1rem;
-        }
-
-        .upload-section {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
-        }
-
-        .upload-title {
-            font-size: 1.5rem;
-            color: #1f2937;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .btn-upload {
-            width: 100%;
-            padding: 14px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .btn-upload:hover {
-            background: #2563eb;
-        }
-
-        .btn-upload:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .files-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .file-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .file-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
-        }
-
-        .file-name {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
-
-        .file-info {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
-
-        .file-stats {
-            display: flex;
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .like-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            background: #f3f4f6;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1rem;
-        }
-
-        .like-btn:hover:not(.liked):not(:disabled) {
-            background: #fef2f2;
-            color: #dc2626;
-        }
-
-        .like-btn.liked {
-            background: #fee2e2;
-            color: #dc2626;
-            cursor: not-allowed;
-        }
-
-        .views {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #6b7280;
-        }
-
-        .download-btn {
-            width: 100%;
-            padding: 12px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: background 0.3s;
-        }
-
-        .download-btn:hover {
-            background: #059669;
-        }
-
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px 20px;
-            color: #9ca3af;
-            font-size: 1.2rem;
-        }
-
-        .loading {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px 20px;
-            color: #6b7280;
-            font-size: 1.5rem;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>கோப்பு பகிர்வு தளம்</h1>
-            <p class="subtitle">உங்கள் கோப்புகளை எளிதாக பகிர்ந்து கொள்ளுங்கள்</p>
-        </header>
-
-        <div class="upload-section">
-            <h2 class="upload-title">📤 புதிய கோப்பு பதிவேற்றம்</h2>
-            <div class="form-group">
-                <input type="text" id="fileName" placeholder="கோப்பு பெயர்">
-            </div>
-            <div class="form-group">
-                <input type="text" id="fileSize" placeholder="கோப்பு அளவு (எ.கா: 2.5 MB)">
-            </div>
-            <button class="btn-upload" onclick="uploadFile()">கோப்பை பதிவேற்று</button>
-        </div>
-
-        <div class="files-grid" id="filesContainer">
-            <div class="loading">ஏற்றுகிறது...</div>
-        </div>
-    </div>
-
-    <script>
-        let files = [];
-
-        // Load files on page load
-        window.addEventListener('DOMContentLoaded', async () => {
-            await loadFiles();
-        });
-
-        async function loadFiles() {
-            try {
-                const result = await window.storage.list('file:', true);
-                if (result && result.keys) {
-                    const filePromises = result.keys.map(async (key) => {
-                        try {
-                            const data = await window.storage.get(key, true);
-                            return data ? JSON.parse(data.value) : null;
-                        } catch {
-                            return null;
-                        }
-                    });
-                    files = (await Promise.all(filePromises)).filter(f => f !== null);
-                }
-            } catch (error) {
-                console.log('No files found yet');
-            }
-            renderFiles();
-        }
-
-        function renderFiles() {
-            const container = document.getElementById('filesContainer');
-            
-            if (files.length === 0) {
-                container.innerHTML = '<div class="empty-state">இன்னும் கோப்புகள் எதுவும் இல்லை. முதல் கோப்பை பதிவேற்றுங்கள்!</div>';
-                return;
-            }
-
-            container.innerHTML = files.map(file => createFileCard(file)).join('');
-            
-            // Add view tracking for each file
-            files.forEach(file => trackView(file.id));
-        }
-
-        function createFileCard(file) {
-            const isLiked = checkIfLiked(file.id);
-            return `
-                <div class="file-card">
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-info">கோப்பு அளவு: ${file.size}</div>
-                    <div class="file-info">பதிவேற்றப்பட்ட தேதி: ${file.uploadDate}</div>
-                    
-                    <div class="file-stats">
-                        <button class="like-btn ${isLiked ? 'liked' : ''}" 
-                                onclick="likeFile('${file.id}')" 
-                                ${isLiked ? 'disabled' : ''}>
-                            <span>${isLiked ? '❤️' : '🤍'}</span>
-                            <span id="likes-${file.id}">${file.likes}</span>
-                        </button>
-                        <div class="views">
-                            <span>👁️</span>
-                            <span>காட்சிகள்: <span id="views-${file.id}">${file.views}</span></span>
-                        </div>
-                    </div>
-                    
-                    <button class="download-btn" onclick="downloadFile('${file.name}')">
-                        <span>⬇️</span>
-                        கோப்பைப் பதிவிறக்கு
-                    </button>
-                </div>
-            `;
-        }
-
-        async function uploadFile() {
-            const fileName = document.getElementById('fileName').value.trim();
-            const fileSize = document.getElementById('fileSize').value.trim();
-
-            if (!fileName) {
-                alert('கோப்பு பெயரை உள்ளிடவும்!');
-                return;
-            }
-
-            const fileId = `file:${Date.now()}`;
-            const newFile = {
-                id: fileId,
-                name: fileName,
-                size: fileSize || '0 MB',
-                uploadDate: new Date().toLocaleDateString('ta-IN'),
-                likes: 0,
-                views: 0
-            };
-
-            try {
-                await window.storage.set(fileId, JSON.stringify(newFile), true);
-                files.push(newFile);
-                renderFiles();
-                
-                document.getElementById('fileName').value = '';
-                document.getElementById('fileSize').value = '';
-                
-                alert('கோப்பு வெற்றிகரமாக பதிவேற்றப்பட்டது!');
-            } catch (error) {
-                alert('பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.');
-            }
-        }
-
-        async function likeFile(fileId) {
-            const user
+</html>
