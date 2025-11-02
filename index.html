@@ -1,627 +1,173 @@
 <!DOCTYPE html>
 <html lang="ta">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🖼️ Gallery - Theepika Sweety</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Catbox Gallery</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { 
-      font-family: 'Segoe UI', sans-serif; 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff; 
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 1rem;
+      background: #111;
+      border-bottom: 2px solid #333;
+    }
+    h1 { margin: 0; }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
       padding: 20px;
-      min-height: 100vh;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
-    
-    h1 { 
-      text-align: center; 
-      font-size: 2.5rem;
-      margin: 20px 0;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .subtitle { 
-      text-align: center; 
-      opacity: 0.9;
-      margin-bottom: 30px;
-      font-size: 1.1rem;
-    }
-
-    /* Admin Button - Hide on share links */
-    .admin-btn {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      padding: 10px 20px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      border: 2px solid rgba(255,255,255,0.3);
-      transition: 0.3s;
-      z-index: 100;
-      display: none;
-    }
-    .admin-btn.show { display: block; }
-    .admin-btn:hover {
-      background: rgba(255,255,255,0.3);
-    }
-
-    /* Upload Box - Admin Only */
-    .upload-box { 
-      background: rgba(255,255,255,0.1); 
-      backdrop-filter: blur(10px);
-      padding: 25px; 
-      border-radius: 15px; 
-      margin: 20px 0; 
-      display: none;
-      border: 2px solid rgba(255,255,255,0.2);
-    }
-    .upload-box.show { display: block; }
-    
-    .drop-zone { 
-      border: 3px dashed rgba(255,255,255,0.4); 
-      padding: 40px; 
-      text-align: center; 
-      border-radius: 12px; 
-      cursor: pointer; 
-      transition: all 0.3s;
-      background: rgba(255,255,255,0.05);
-    }
-    .drop-zone:hover { 
-      border-color: rgba(255,255,255,0.8); 
-      background: rgba(255,255,255,0.1);
-    }
-    
-    .preview { text-align: center; margin: 15px 0; }
-    .preview img, .preview video { 
-      max-height: 200px; 
-      margin: 15px auto; 
+    .card {
+      background: #1a1a1a;
       border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      display: block;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      transition: transform 0.2s;
     }
-    
-    input, textarea, button { 
-      width: 100%; 
-      padding: 14px; 
-      margin: 10px 0; 
-      border-radius: 10px; 
-      border: 2px solid rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      font-size: 1rem;
+    .card:hover { transform: scale(1.03); }
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      cursor: pointer;
     }
-    input::placeholder, textarea::placeholder {
-      color: rgba(255,255,255,0.6);
+    .card-info {
+      padding: 10px;
+      text-align: center;
     }
-    
-    button { 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none; 
-      font-weight: bold; 
+    .btn-like {
+      background: #ff3366;
+      border: none;
+      border-radius: 20px;
+      color: white;
+      padding: 6px 14px;
       cursor: pointer;
       transition: 0.3s;
-      text-transform: uppercase;
-      letter-spacing: 1px;
     }
-    button:hover { 
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    }
-    button:disabled { 
-      background: rgba(255,255,255,0.2);
+    .btn-like:disabled {
+      background: #555;
       cursor: not-allowed;
     }
-
-    /* Upload History - Admin Only */
-    .history {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
+    .upload-box {
+      text-align: center;
+      margin: 20px auto;
+      background: #111;
       padding: 20px;
-      border-radius: 15px;
-      margin: 20px 0;
-      display: none;
-      border: 2px solid rgba(255,255,255,0.2);
+      width: 90%;
+      max-width: 400px;
+      border-radius: 10px;
     }
-    .history.show { display: block; }
-    .history h3 {
-      margin-bottom: 15px;
-      color: #fbbf24;
-    }
-    .history-item {
-      background: rgba(0,0,0,0.2);
-      padding: 10px 15px;
-      border-radius: 8px;
+    input, button {
       margin: 8px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .history-item .time {
-      opacity: 0.7;
-      font-size: 0.85rem;
-    }
-
-    /* Gallery Grid */
-    .gallery { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-      gap: 25px; 
-      margin-top: 30px;
-    }
-    
-    .card { 
-      background: rgba(255,255,255,0.1); 
-      backdrop-filter: blur(10px);
-      border-radius: 15px; 
-      overflow: hidden;
-      transition: 0.3s;
-      border: 2px solid rgba(255,255,255,0.2);
-    }
-    .card:hover { 
-      transform: translateY(-10px);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.3);
-    }
-    
-    .media { 
-      width: 100%; 
-      height: 250px; 
-      object-fit: cover; 
-      display: block;
-      background: rgba(0,0,0,0.2);
-    }
-    
-    .info { padding: 20px; }
-    .name { 
-      font-weight: bold; 
-      font-size: 1.3rem;
-      margin-bottom: 8px;
-    }
-    .desc { 
-      opacity: 0.9;
-      font-size: 0.95rem; 
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-    
-    /* Stats - Visible to everyone */
-    .stats { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center;
-      font-size: 0.95rem;
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    .like-btn { 
-      background: rgba(255,255,255,0.2);
-      padding: 10px 18px; 
-      border-radius: 25px; 
-      cursor: pointer;
-      transition: 0.3s;
-      user-select: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-weight: 600;
-    }
-    .like-btn:hover { 
-      background: rgba(255,255,255,0.3);
-      transform: scale(1.05);
-    }
-    .like-btn.liked { 
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      animation: pulse 0.3s;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-    
-    /* Admin Actions - Only visible to admin */
-    .admin-actions { 
-      display: none;
-      gap: 10px; 
-      margin-top: 15px;
-    }
-    .admin-actions.show {
-      display: flex;
-    }
-    
-    .action-btn { 
-      flex: 1; 
-      padding: 12px; 
-      font-size: 0.9rem; 
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.3s;
-      color: white;
-    }
-    .action-btn:hover { 
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    }
-
-    .empty { 
-      text-align: center; 
-      padding: 60px 20px;
-      font-size: 1.3rem;
-      opacity: 0.7;
-    }
-    
-    .toast { 
-      position: fixed; 
-      top: 30px; 
-      right: 30px; 
-      padding: 16px 24px; 
-      background: rgba(255,255,255,0.95);
-      color: #333;
-      border-radius: 10px; 
-      z-index: 1000; 
-      animation: slideIn 0.3s;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-      font-weight: 500;
-    }
-    .toast.error { 
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: #fff;
-    }
-    
-    @keyframes slideIn { 
-      from { transform: translateX(120px); opacity: 0; } 
-      to { transform: translateX(0); opacity: 1; } 
-    }
-
-    .highlight {
-      animation: highlight 1.5s;
-    }
-    @keyframes highlight {
-      0%, 100% { border-color: rgba(255,255,255,0.2); }
-      50% { border-color: #ffd700; box-shadow: 0 0 20px rgba(255,215,0,0.5); }
+      padding: 8px;
+      width: 90%;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Admin Button - Only show on main page -->
-    <button class="admin-btn" id="adminBtn" onclick="loginAdmin()">🔒 Admin Login</button>
+  <header>
+    <h1>📷 My Catbox Gallery</h1>
+    <p>Like 👍 மற்றும் Views 👁️ கணக்குடன் உங்கள் படங்கள்</p>
+  </header>
 
-    <h1>🖼️ என் Gallery</h1>
-    <p class="subtitle">✨ உனக்கு மட்டும் தெரியும்... ஆனால் share பண்ணலாம் 💙</p>
-
-    <!-- Upload Box - Admin Only -->
-    <div class="upload-box" id="uploadBox">
-      <div class="drop-zone" id="dropZone">
-        📤 கோப்பை இழுத்து விடு அல்லது கிளிக் செய்
-        <input type="file" id="fileInput" accept="image/*,video/*" hidden />
-      </div>
-      <div class="preview" id="preview"></div>
-      <input type="text" id="nameInput" placeholder="📝 பெயர் (optional)" />
-      <textarea id="descInput" placeholder="💬 விளக்கம்... (optional)" rows="3"></textarea>
-      <button id="uploadBtn" disabled>⬆️ பதிவேற்று</button>
-    </div>
-
-    <!-- Upload History - Admin Only -->
-    <div class="history" id="uploadHistory">
-      <h3>📜 Upload History</h3>
-      <div id="historyList"></div>
-    </div>
-
-    <div class="gallery" id="gallery"></div>
+  <!-- Only Admin Upload -->
+  <div class="upload-box">
+    <h3>Admin Upload</h3>
+    <input type="file" id="fileInput">
+    <input type="text" id="titleInput" placeholder="Title (optional)">
+    <input type="password" id="adminPass" placeholder="Admin Password">
+    <button onclick="uploadPhoto()">Upload</button>
+    <p id="uploadMsg"></p>
   </div>
 
+  <!-- Gallery -->
+  <div class="gallery" id="gallery"></div>
+
   <script>
-    const REPO = 'adflyaa/theepika_sweety';
-    const DATA_PATH = 'docs/data.json';
-    const PASSWORD = 'uu934587kk';
-    
-    let files = [];
-    let likes = JSON.parse(localStorage.getItem('gallery_likes') || '{}');
-    let isAdmin = false;
-    
-    // Check if this is a share link
-    const isShareLink = new URLSearchParams(location.search).has('id');
+    const apiBase = ''; // same domain assumed (if API on same server)
 
-    // Show admin button only on main page (not share links)
-    if (!isShareLink) {
-      document.getElementById('adminBtn').classList.add('show');
-    }
-
-    // Login Admin
-    function loginAdmin() {
-      const pwd = prompt('🔒 Admin Password:');
-      if (pwd === PASSWORD) {
-        isAdmin = true;
-        document.getElementById('uploadBox').classList.add('show');
-        document.getElementById('uploadHistory').classList.add('show');
-        document.querySelectorAll('.admin-actions').forEach(el => el.classList.add('show'));
-        showToast('✅ Admin mode activated!');
-        document.getElementById('adminBtn').textContent = '✓ Admin Mode';
-        updateHistory();
-      } else if (pwd) {
-        showToast('❌ Wrong password!', true);
-      }
-    }
-
-    // Update upload history
-    function updateHistory() {
-      if (!isAdmin) return;
-      
-      const historyHTML = files.slice(0, 10).map(f => {
-        const date = new Date(parseInt(f.id));
-        const timeStr = date.toLocaleString('ta-IN', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        return `
-          <div class="history-item">
-            <span>📸 ${f.name}</span>
-            <span class="time">${timeStr}</span>
+    async function loadGallery() {
+      const res = await fetch(`${apiBase}/api/photos`);
+      const data = await res.json();
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = '';
+      data.photos.forEach(photo => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <img src="${photo.url}" alt="${photo.title}" onclick="openPhoto('${photo.id}')">
+          <div class="card-info">
+            <div>${photo.title || 'Untitled'}</div>
+            <div>👁️ ${photo.views} | ❤️ ${photo.likes}</div>
+            <button class="btn-like" id="like_${photo.id}" onclick="likePhoto('${photo.id}')">Like</button>
           </div>
         `;
-      }).join('');
-      
-      document.getElementById('historyList').innerHTML = historyHTML || '<div class="history-item">இன்னும் uploads இல்லை</div>';
-    }
-
-    // Load data
-    async function loadData() {
-      try {
-        const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/${DATA_PATH}?t=${Date.now()}`);
-        if (!res.ok) throw new Error('Data not found');
-        files = await res.json();
-        renderGallery();
-        trackViews();
-        if (isAdmin) updateHistory();
-      } catch (err) {
-        console.error('Load error:', err);
-        document.getElementById('gallery').innerHTML = '<div class="empty">📭 இன்னும் கோப்புகள் இல்லை</div>';
-      }
-    }
-
-    // Render gallery
-    function renderGallery() {
-      const urlId = new URLSearchParams(location.search).get('id');
-      
-      if (files.length === 0) {
-        document.getElementById('gallery').innerHTML = '<div class="empty">📭 இன்னும் கோப்புகள் இல்லை</div>';
-        return;
-      }
-
-      // If share link, show only that specific file
-      let displayFiles = files;
-      if (urlId) {
-        displayFiles = files.filter(f => f.id === urlId);
-        if (displayFiles.length === 0) {
-          document.getElementById('gallery').innerHTML = '<div class="empty">⚠️ File not found!</div>';
-          return;
+        // disable like if already liked
+        if (document.cookie.includes('liked_' + photo.id + '=1')) {
+          div.querySelector(`#like_${photo.id}`).disabled = true;
+          div.querySelector(`#like_${photo.id}`).innerText = 'Liked';
         }
-      }
-
-      document.getElementById('gallery').innerHTML = displayFiles.map((f, i) => {
-        const actualIndex = files.findIndex(file => file.id === f.id);
-        return `
-        <div class="card ${f.id === urlId ? 'highlight' : ''}" id="card-${f.id}">
-          ${f.type.startsWith('image') 
-            ? `<img src="${f.data}" class="media" alt="${f.name}">` 
-            : `<video src="${f.data}" class="media" controls></video>`}
-          <div class="info">
-            <div class="name">${f.name}</div>
-            ${f.desc ? `<div class="desc">${f.desc}</div>` : ''}
-            
-            <!-- Stats - Visible to everyone -->
-            <div class="stats">
-              <span>👁️ ${f.views || 0} views</span>
-              <div class="like-btn ${likes[f.id] ? 'liked' : ''}" onclick="toggleLike(${actualIndex})">
-                ${likes[f.id] ? '❤️' : '🤍'} ${f.likes || 0}
-              </div>
-            </div>
-            
-            <!-- Admin Actions - Only visible when logged in -->
-            <div class="admin-actions ${isAdmin ? 'show' : ''}">
-              <button class="action-btn" style="background:linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" onclick="downloadFile(${actualIndex})">⬇️ Download</button>
-              <button class="action-btn" style="background:linear-gradient(135deg, #4481eb 0%, #04befe 100%);" onclick="shareFile(${actualIndex})">🔗 Share</button>
-            </div>
-          </div>
-        </div>
-      `}).join('');
-
-      // Scroll to highlighted card
-      if (urlId) {
-        setTimeout(() => {
-          const card = document.getElementById('card-' + urlId);
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 500);
-      }
-    }
-
-    // Like system - Available to everyone
-    function toggleLike(index) {
-      const fileId = files[index].id;
-      if (likes[fileId]) {
-        showToast('⚠️ ஏற்கனவே like போட்டாய்!', true);
-        return;
-      }
-      
-      files[index].likes = (files[index].likes || 0) + 1;
-      likes[fileId] = true;
-      localStorage.setItem('gallery_likes', JSON.stringify(likes));
-      
-      updateData();
-      renderGallery();
-      showToast('❤️ Like போட்டாய்!');
-    }
-
-    // Share - Admin only
-    function shareFile(index) {
-      if (!isAdmin) return;
-      const file = files[index];
-      const url = `${location.origin}${location.pathname}?id=${file.id}`;
-      
-      navigator.clipboard.writeText(url).then(() => {
-        showToast('🔗 Link copied! WhatsApp-ல் paste செய்');
+        gallery.appendChild(div);
       });
-      
-      if (navigator.share) {
-        navigator.share({
-          title: file.name,
-          text: file.desc || 'Check this out!',
-          url: url
-        }).catch(() => {});
+    }
+
+    async function likePhoto(id) {
+      const btn = document.getElementById(`like_${id}`);
+      btn.disabled = true;
+      const res = await fetch(`${apiBase}/api/photo/${id}/like`, { method: 'POST' });
+      if (res.ok) {
+        btn.innerText = 'Liked';
+        loadGallery();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Already liked');
       }
     }
 
-    // Download - Admin only
-    function downloadFile(index) {
-      if (!isAdmin) return;
-      const file = files[index];
-      const a = document.createElement('a');
-      a.href = file.data;
-      a.download = file.name;
-      a.click();
-      showToast('⬇️ Download started!');
+    function openPhoto(id) {
+      window.open(`${apiBase}/photo/${id}`, '_blank');
     }
 
-    // Track views - Everyone
-    function trackViews() {
-      const sessionViews = JSON.parse(sessionStorage.getItem('gallery_views') || '{}');
-      let updated = false;
-      
-      // Track view for specific file in share link
-      const urlId = new URLSearchParams(location.search).get('id');
-      
-      files.forEach(f => {
-        // Only count view if it's main gallery OR it's the shared file
-        if (!urlId || f.id === urlId) {
-          if (!sessionViews[f.id]) {
-            f.views = (f.views || 0) + 1;
-            sessionViews[f.id] = true;
-            updated = true;
-          }
-        }
-      });
-      
-      if (updated) {
-        sessionStorage.setItem('gallery_views', JSON.stringify(sessionViews));
-        updateData();
-      }
-    }
-
-    // Update GitHub - Admin only
-    async function updateData() {
-      // Don't update if visitor (non-admin)
-      // But allow view/like updates even for visitors
-      
-      try {
-        const shaRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`);
-        if (!shaRes.ok) throw new Error('Cannot get SHA');
-        const shaData = await shaRes.json();
-        
-        const headers = {
-          'Content-Type': 'application/json'
-        };
-        
-        // Add auth token only if admin
-        if (isAdmin) {
-          headers['Authorization'] = 'token GH_PAT_WILL_BE_HERE';
-        }
-        
-        await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
-          method: 'PUT',
-          headers: headers,
-          body: JSON.stringify({
-            message: 'Update gallery data',
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(files, null, 2)))),
-            sha: shaData.sha
-          })
-        });
-      } catch (err) {
-        console.error('Update error:', err);
-      }
-    }
-
-    // Upload functionality - Admin only
-    document.getElementById('dropZone').onclick = () => {
-      if (isAdmin) document.getElementById('fileInput').click();
-    };
-    
-    document.getElementById('fileInput').onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const previewHtml = file.type.startsWith('image')
-          ? `<img src="${ev.target.result}">`
-          : `<video src="${ev.target.result}" controls></video>`;
-        
-        document.getElementById('preview').innerHTML = previewHtml;
-        document.getElementById('uploadBtn').disabled = false;
-      };
-      reader.readAsDataURL(file);
-    };
-
-    document.getElementById('uploadBtn').onclick = () => {
+    async function uploadPhoto() {
       const file = document.getElementById('fileInput').files[0];
-      if (!file) return;
-      
-      const name = document.getElementById('nameInput').value || file.name;
-      const desc = document.getElementById('descInput').value;
-      
-      showToast('⏳ Uploading...');
-      
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const newFile = {
-          id: Date.now().toString(),
-          name: name,
-          desc: desc,
-          data: ev.target.result,
-          type: file.type,
-          likes: 0,
-          views: 0
-        };
-        
-        files.unshift(newFile);
-        updateData();
-        
-        setTimeout(() => {
-          loadData();
-          
-          // Reset form
-          document.getElementById('preview').innerHTML = '';
-          document.getElementById('nameInput').value = '';
-          document.getElementById('descInput').value = '';
-          document.getElementById('fileInput').value = '';
-          document.getElementById('uploadBtn').disabled = true;
-          
-          showToast('✅ பதிவேற்றம் வெற்றி!');
-        }, 1000);
-      };
-      reader.readAsDataURL(file);
-    };
+      const title = document.getElementById('titleInput').value;
+      const pass = document.getElementById('adminPass').value;
+      const msg = document.getElementById('uploadMsg');
 
-    // Toast notification
-    function showToast(message, isError = false) {
-      const toast = document.createElement('div');
-      toast.className = 'toast' + (isError ? ' error' : '');
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      if (!file || !pass) {
+        msg.innerText = 'File மற்றும் Admin Password தேவை!';
+        msg.style.color = 'orange';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', title);
+      formData.append('adminPass', pass);
+
+      const res = await fetch(`${apiBase}/api/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        msg.innerText = '✅ Upload successful!';
+        msg.style.color = 'lightgreen';
+        document.getElementById('fileInput').value = '';
+        loadGallery();
+      } else {
+        msg.innerText = '❌ ' + (data.error || 'Upload failed');
+        msg.style.color = 'red';
+      }
     }
 
-    // Initial load
-    loadData();
+    // Load gallery on page start
+    loadGallery();
   </script>
 </body>
 </html>
