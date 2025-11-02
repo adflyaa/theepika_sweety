@@ -3,171 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Catbox Gallery</title>
+  <title>Theepika Sweety Gallery 💖</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0d0d0d;
-      color: white;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      text-align: center;
-      padding: 1rem;
-      background: #111;
-      border-bottom: 2px solid #333;
-    }
-    h1 { margin: 0; }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 15px;
-      padding: 20px;
-    }
-    .card {
-      background: #1a1a1a;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      transition: transform 0.2s;
-    }
-    .card:hover { transform: scale(1.03); }
-    .card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      cursor: pointer;
-    }
-    .card-info {
-      padding: 10px;
-      text-align: center;
-    }
-    .btn-like {
-      background: #ff3366;
-      border: none;
-      border-radius: 20px;
-      color: white;
-      padding: 6px 14px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .btn-like:disabled {
-      background: #555;
-      cursor: not-allowed;
-    }
-    .upload-box {
-      text-align: center;
-      margin: 20px auto;
-      background: #111;
-      padding: 20px;
-      width: 90%;
-      max-width: 400px;
-      border-radius: 10px;
-    }
-    input, button {
-      margin: 8px 0;
-      padding: 8px;
-      width: 90%;
-    }
+    body { font-family: 'Poppins', sans-serif; background:#111; color:white; margin:0; padding:0; }
+    header { text-align:center; padding:15px; background:#1b1b1b; border-bottom:2px solid #333; }
+    h1 { margin:0; }
+    .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:15px; padding:20px; }
+    .card { background:#222; border-radius:10px; overflow:hidden; text-align:center; padding-bottom:10px; transition:0.2s; }
+    .card:hover { transform:scale(1.03); }
+    img { width:100%; height:200px; object-fit:cover; }
+    .meta { margin:6px 0; font-size:0.9rem; color:#bbb; }
+    button { background:#ff3e6c; border:none; color:white; border-radius:20px; padding:6px 12px; cursor:pointer; }
+    button:disabled { background:#555; cursor:not-allowed; }
+    .upload-box { text-align:center; margin:20px auto; background:#1b1b1b; padding:20px; border-radius:10px; width:90%; max-width:400px; }
+    input,button { margin:6px; width:90%; padding:8px; }
+    .viewer { text-align:center; padding:20px; }
+    .viewer img { width:90%; max-width:600px; border-radius:10px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>📷 My Catbox Gallery</h1>
-    <p>Like 👍 மற்றும் Views 👁️ கணக்குடன் உங்கள் படங்கள்</p>
-  </header>
+<header>
+  <h1>📷 Theepika Sweety Gallery</h1>
+</header>
 
-  <!-- Only Admin Upload -->
-  <div class="upload-box">
-    <h3>Admin Upload</h3>
-    <input type="file" id="fileInput">
-    <input type="text" id="titleInput" placeholder="Title (optional)">
-    <input type="password" id="adminPass" placeholder="Admin Password">
-    <button onclick="uploadPhoto()">Upload</button>
-    <p id="uploadMsg"></p>
-  </div>
+<div class="upload-box">
+  <h3>Admin Upload (You Only)</h3>
+  <input type="file" id="fileInput">
+  <input type="text" id="title" placeholder="Title (optional)">
+  <input type="password" id="token" placeholder="GitHub Token">
+  <button onclick="upload()">Upload</button>
+  <p id="status"></p>
+</div>
 
-  <!-- Gallery -->
-  <div class="gallery" id="gallery"></div>
+<div id="gallery" class="gallery"></div>
 
-  <script>
-    const apiBase = ''; // same domain assumed (if API on same server)
+<script>
+const repo = "adfly450/theepika_sweety"; // <-- உங்கள் GitHub repo பெயர்
+const branch = "main";
+const dataUrl = `https://raw.githubusercontent.com/${repo}/${branch}/docs/data.json`;
 
-    async function loadGallery() {
-      const res = await fetch(`${apiBase}/api/photos`);
-      const data = await res.json();
-      const gallery = document.getElementById('gallery');
-      gallery.innerHTML = '';
-      data.photos.forEach(photo => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `
-          <img src="${photo.url}" alt="${photo.title}" onclick="openPhoto('${photo.id}')">
-          <div class="card-info">
-            <div>${photo.title || 'Untitled'}</div>
-            <div>👁️ ${photo.views} | ❤️ ${photo.likes}</div>
-            <button class="btn-like" id="like_${photo.id}" onclick="likePhoto('${photo.id}')">Like</button>
-          </div>
-        `;
-        // disable like if already liked
-        if (document.cookie.includes('liked_' + photo.id + '=1')) {
-          div.querySelector(`#like_${photo.id}`).disabled = true;
-          div.querySelector(`#like_${photo.id}`).innerText = 'Liked';
-        }
-        gallery.appendChild(div);
-      });
-    }
+async function loadGallery(){
+  const res = await fetch(dataUrl + '?_=' + Date.now());
+  const list = await res.json();
+  const g = document.getElementById("gallery");
+  g.innerHTML = "";
+  list.slice().reverse().forEach(p=>{
+    const liked = localStorage.getItem("liked_"+p.id);
+    g.innerHTML += `
+      <div class="card">
+        <img src="${p.url}" onclick="openView('${p.id}')">
+        <div class="meta">${p.title || "Untitled"}</div>
+        <div class="meta">👁️ ${p.views || 0} ❤️ ${p.likes || 0}</div>
+        <button onclick="like('${p.id}')" id="btn_${p.id}" ${liked?"disabled":""}>${liked?"Liked":"Like"}</button>
+      </div>`;
+  });
+}
+loadGallery();
 
-    async function likePhoto(id) {
-      const btn = document.getElementById(`like_${id}`);
-      btn.disabled = true;
-      const res = await fetch(`${apiBase}/api/photo/${id}/like`, { method: 'POST' });
-      if (res.ok) {
-        btn.innerText = 'Liked';
-        loadGallery();
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Already liked');
-      }
-    }
+async function upload(){
+  const file = document.getElementById('fileInput').files[0];
+  const title = document.getElementById('title').value;
+  const token = document.getElementById('token').value;
+  const msg = document.getElementById('status');
+  if(!file || !token){ msg.textContent="File + Token தேவை!"; return; }
+  msg.textContent="⏳ Uploading...";
+  
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result.split(',')[1];
+    const filename = Date.now() + "_" + file.name.replace(/\s+/g,'_');
+    const uploadUrl = `https://api.github.com/repos/${repo}/contents/docs/uploads/${filename}`;
 
-    function openPhoto(id) {
-      window.open(`${apiBase}/photo/${id}`, '_blank');
-    }
+    // 1️⃣ Get current JSON
+    const dataRes = await fetch(dataUrl);
+    const list = await dataRes.json();
 
-    async function uploadPhoto() {
-      const file = document.getElementById('fileInput').files[0];
-      const title = document.getElementById('titleInput').value;
-      const pass = document.getElementById('adminPass').value;
-      const msg = document.getElementById('uploadMsg');
+    // 2️⃣ Upload file to GitHub
+    await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Authorization": `token ${token}`, "Content-Type":"application/json" },
+      body: JSON.stringify({ message:"Add photo", content: base64 })
+    });
 
-      if (!file || !pass) {
-        msg.innerText = 'File மற்றும் Admin Password தேவை!';
-        msg.style.color = 'orange';
-        return;
-      }
+    const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/docs/uploads/${filename}`;
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('title', title);
-      formData.append('adminPass', pass);
+    // 3️⃣ Update JSON
+    list.push({ id: filename, title, url: rawUrl, likes:0, views:0 });
+    const newContent = btoa(JSON.stringify(list, null, 2));
 
-      const res = await fetch(`${apiBase}/api/upload`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        msg.innerText = '✅ Upload successful!';
-        msg.style.color = 'lightgreen';
-        document.getElementById('fileInput').value = '';
-        loadGallery();
-      } else {
-        msg.innerText = '❌ ' + (data.error || 'Upload failed');
-        msg.style.color = 'red';
-      }
-    }
+    const dataShaRes = await fetch(`https://api.github.com/repos/${repo}/contents/docs/data.json`);
+    const dataSha = (await dataShaRes.json()).sha;
 
-    // Load gallery on page start
-    loadGallery();
-  </script>
+    await fetch(`https://api.github.com/repos/${repo}/contents/docs/data.json`, {
+      method:"PUT",
+      headers: { "Authorization": `token ${token}`, "Content-Type":"application/json" },
+      body: JSON.stringify({ message:"Update data.json", content:newContent, sha:dataSha })
+    });
+
+    msg.textContent="✅ Uploaded! Refreshing...";
+    setTimeout(loadGallery,2000);
+  };
+  reader.readAsDataURL(file);
+}
+
+// 🔹 Like system
+async function like(id){
+  const btn=document.getElementById('btn_'+id);
+  btn.disabled=true;
+  localStorage.setItem("liked_"+id,"1");
+
+  const dataRes=await fetch(dataUrl);
+  const list=await dataRes.json();
+  const index=list.findIndex(p=>p.id===id);
+  if(index<0)return;
+
+  list[index].likes=(list[index].likes||0)+1;
+  const token=prompt("Enter GitHub Token to save like count:");
+  if(!token){ alert("Token தேவை!"); return; }
+
+  const shaRes=await fetch(`https://api.github.com/repos/${repo}/contents/docs/data.json`);
+  const sha=(await shaRes.json()).sha;
+  const newContent=btoa(JSON.stringify(list,null,2));
+
+  await fetch(`https://api.github.com/repos/${repo}/contents/docs/data.json`,{
+    method:"PUT",
+    headers:{ "Authorization":`token ${token}`,"Content-Type":"application/json"},
+    body:JSON.stringify({message:`Like ${id}`,content:newContent,sha})
+  });
+  alert("❤️ Liked saved!");
+  loadGallery();
+}
+
+// 🔹 View counter page
+function openView(id){
+  const url = `${location.origin}${location.pathname}?view=${id}`;
+  window.open(url,'_blank');
+}
+
+// Viewer mode (when ?view=)
+(async ()=>{
+  const params=new URLSearchParams(location.search);
+  const view=params.get("view");
+  if(!view)return;
+  document.body.innerHTML="";
+  const data=await fetch(dataUrl).then(r=>r.json());
+  const p=data.find(x=>x.id===view);
+  if(!p)return document.write("Not found!");
+
+  p.views=(p.views||0)+1;
+
+  const shaRes=await fetch(`https://api.github.com/repos/${repo}/contents/docs/data.json`);
+  const sha=(await shaRes.json()).sha;
+  const newContent=btoa(JSON.stringify(data,null,2));
+  const token=prompt("Enter GitHub Token to update view count:");
+  if(!token){ alert("Token தேவை!"); return; }
+
+  await fetch(`https://api.github.com/repos/${repo}/contents/docs/data.json`,{
+    method:"PUT",
+    headers:{ "Authorization":`token ${token}`,"Content-Type":"application/json"},
+    body:JSON.stringify({message:`View +1 for ${view}`,content:newContent,sha})
+  });
+
+  document.body.innerHTML=`
+    <div class='viewer'>
+      <img src='${p.url}'><br>
+      <h3>${p.title||"Untitled"}</h3>
+      <p>👁️ ${p.views} views | ❤️ ${p.likes} likes</p>
+      <button disabled>Like Locked (Gallery Only)</button>
+      <br><a href='${p.url}' style='color:#0ff'>Download File</a>
+    </div>`;
+})();
+</script>
 </body>
 </html>
