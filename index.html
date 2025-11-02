@@ -28,7 +28,7 @@
       font-size: 1.1rem;
     }
 
-    /* Admin Button */
+    /* Admin Button - Hide on share links */
     .admin-btn {
       position: fixed;
       top: 20px;
@@ -42,7 +42,9 @@
       border: 2px solid rgba(255,255,255,0.3);
       transition: 0.3s;
       z-index: 100;
+      display: none;
     }
+    .admin-btn.show { display: block; }
     .admin-btn:hover {
       background: rgba(255,255,255,0.3);
     }
@@ -112,6 +114,35 @@
     button:disabled { 
       background: rgba(255,255,255,0.2);
       cursor: not-allowed;
+    }
+
+    /* Upload History - Admin Only */
+    .history {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px 0;
+      display: none;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .history.show { display: block; }
+    .history h3 {
+      margin-bottom: 15px;
+      color: #fbbf24;
+    }
+    .history-item {
+      background: rgba(0,0,0,0.2);
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-item .time {
+      opacity: 0.7;
+      font-size: 0.85rem;
     }
 
     /* Gallery Grid */
@@ -260,7 +291,8 @@
 </head>
 <body>
   <div class="container">
-    <button class="admin-btn" onclick="loginAdmin()">🔒 Admin Login</button>
+    <!-- Admin Button - Only show on main page -->
+    <button class="admin-btn" id="adminBtn" onclick="loginAdmin()">🔒 Admin Login</button>
 
     <h1>🖼️ என் Gallery</h1>
     <p class="subtitle">✨ உனக்கு மட்டும் தெரியும்... ஆனால் share பண்ணலாம் 💙</p>
@@ -277,6 +309,12 @@
       <button id="uploadBtn" disabled>⬆️ பதிவேற்று</button>
     </div>
 
+    <!-- Upload History - Admin Only -->
+    <div class="history" id="uploadHistory">
+      <h3>📜 Upload History</h3>
+      <div id="historyList"></div>
+    </div>
+
     <div class="gallery" id="gallery"></div>
   </div>
 
@@ -288,6 +326,14 @@
     let files = [];
     let likes = JSON.parse(localStorage.getItem('gallery_likes') || '{}');
     let isAdmin = false;
+    
+    // Check if this is a share link
+    const isShareLink = new URLSearchParams(location.search).has('id');
+
+    // Show admin button only on main page (not share links)
+    if (!isShareLink) {
+      document.getElementById('adminBtn').classList.add('show');
+    }
 
     // Login Admin
     function loginAdmin() {
@@ -295,12 +341,37 @@
       if (pwd === PASSWORD) {
         isAdmin = true;
         document.getElementById('uploadBox').classList.add('show');
+        document.getElementById('uploadHistory').classList.add('show');
         document.querySelectorAll('.admin-actions').forEach(el => el.classList.add('show'));
         showToast('✅ Admin mode activated!');
-        document.querySelector('.admin-btn').textContent = '✓ Admin Mode';
+        document.getElementById('adminBtn').textContent = '✓ Admin Mode';
+        updateHistory();
       } else if (pwd) {
         showToast('❌ Wrong password!', true);
       }
+    }
+
+    // Update upload history
+    function updateHistory() {
+      if (!isAdmin) return;
+      
+      const historyHTML = files.slice(0, 10).map(f => {
+        const date = new Date(parseInt(f.id));
+        const timeStr = date.toLocaleString('ta-IN', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        return `
+          <div class="history-item">
+            <span>📸 ${f.name}</span>
+            <span class="time">${timeStr}</span>
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('historyList').innerHTML = historyHTML || '<div class="history-item">இன்னும் uploads இல்லை</div>';
     }
 
     // Load data
@@ -311,6 +382,7 @@
         files = await res.json();
         renderGallery();
         trackViews();
+        if (isAdmin) updateHistory();
       } catch (err) {
         console.error('Load error:', err);
         document.getElementById('gallery').innerHTML = '<div class="empty">📭 இன்னும் கோப்புகள் இல்லை</div>';
@@ -326,7 +398,19 @@
         return;
       }
 
-      document.getElementById('gallery').innerHTML = files.map((f, i) => `
+      // If share link, show only that specific file
+      let displayFiles = files;
+      if (urlId) {
+        displayFiles = files.filter(f => f.id === urlId);
+        if (displayFiles.length === 0) {
+          document.getElementById('gallery').innerHTML = '<div class="empty">⚠️ File not found!</div>';
+          return;
+        }
+      }
+
+      document.getElementById('gallery').innerHTML = displayFiles.map((f, i) => {
+        const actualIndex = files.findIndex(file => file.id === f.id);
+        return `
         <div class="card ${f.id === urlId ? 'highlight' : ''}" id="card-${f.id}">
           ${f.type.startsWith('image') 
             ? `<img src="${f.data}" class="media" alt="${f.name}">` 
@@ -338,19 +422,19 @@
             <!-- Stats - Visible to everyone -->
             <div class="stats">
               <span>👁️ ${f.views || 0} views</span>
-              <div class="like-btn ${likes[f.id] ? 'liked' : ''}" onclick="toggleLike(${i})">
+              <div class="like-btn ${likes[f.id] ? 'liked' : ''}" onclick="toggleLike(${actualIndex})">
                 ${likes[f.id] ? '❤️' : '🤍'} ${f.likes || 0}
               </div>
             </div>
             
             <!-- Admin Actions - Only visible when logged in -->
             <div class="admin-actions ${isAdmin ? 'show' : ''}">
-              <button class="action-btn" style="background:linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" onclick="downloadFile(${i})">⬇️ Download</button>
-              <button class="action-btn" style="background:linear-gradient(135deg, #4481eb 0%, #04befe 100%);" onclick="shareFile(${i})">🔗 Share</button>
+              <button class="action-btn" style="background:linear-gradient(135deg, #11998e 0%, #38ef7d 100%);" onclick="downloadFile(${actualIndex})">⬇️ Download</button>
+              <button class="action-btn" style="background:linear-gradient(135deg, #4481eb 0%, #04befe 100%);" onclick="shareFile(${actualIndex})">🔗 Share</button>
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
 
       // Scroll to highlighted card
       if (urlId) {
@@ -413,11 +497,17 @@
       const sessionViews = JSON.parse(sessionStorage.getItem('gallery_views') || '{}');
       let updated = false;
       
+      // Track view for specific file in share link
+      const urlId = new URLSearchParams(location.search).get('id');
+      
       files.forEach(f => {
-        if (!sessionViews[f.id]) {
-          f.views = (f.views || 0) + 1;
-          sessionViews[f.id] = true;
-          updated = true;
+        // Only count view if it's main gallery OR it's the shared file
+        if (!urlId || f.id === urlId) {
+          if (!sessionViews[f.id]) {
+            f.views = (f.views || 0) + 1;
+            sessionViews[f.id] = true;
+            updated = true;
+          }
         }
       });
       
@@ -429,19 +519,26 @@
 
     // Update GitHub - Admin only
     async function updateData() {
-      if (!isAdmin) return;
+      // Don't update if visitor (non-admin)
+      // But allow view/like updates even for visitors
       
       try {
         const shaRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`);
         if (!shaRes.ok) throw new Error('Cannot get SHA');
         const shaData = await shaRes.json();
         
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        
+        // Add auth token only if admin
+        if (isAdmin) {
+          headers['Authorization'] = 'token GH_PAT_WILL_BE_HERE';
+        }
+        
         await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
           method: 'PUT',
-          headers: {
-            'Authorization': 'token GH_PAT_WILL_BE_HERE',
-            'Content-Type': 'application/json'
-          },
+          headers: headers,
           body: JSON.stringify({
             message: 'Update gallery data',
             content: btoa(unescape(encodeURIComponent(JSON.stringify(files, null, 2)))),
@@ -527,4 +624,4 @@
     loadData();
   </script>
 </body>
-        </html>
+</html>
