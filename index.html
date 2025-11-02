@@ -11,9 +11,10 @@
     h1 { text-align: center; color: #60a5fa; margin-bottom: 10px; }
     .s { text-align: center; color: #94a3b8; margin-bottom: 30px; }
 
+    /* Upload - உனக்கு மட்டும் */
     .up { background: #1e293b; padding: 20px; border-radius: 12px; margin: 20px 0; display: none; }
     .up.show { display: block; }
-    .d { border: 2px dashed #475569; padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+    .d { border: 2px dashed #475569; padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; transition: 0.3s; }
     .d:hover { border-color: #60a5fa; background: #1e3a8a20; }
     .p img, .p video { max-height: 180px; margin: 10px 0; border-radius: 8px; display: block; margin: 10px auto; }
     input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #475569; background: #334155; color: #e2e8f0; }
@@ -21,10 +22,11 @@
     button:hover { background: #2563eb; }
     button:disabled { background: #475569; cursor: not-allowed; }
 
-    .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+    /* Gallery */
+    .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
     .cd { background: #1e293b; border-radius: 12px; overflow: hidden; transition: 0.3s; }
     .cd:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
-    .m { width: 100%; height: 220px; object-fit: cover; background: #334155; display: block; }
+    .m { width: 100%; height: 250px; object-fit: cover; background: #334155; display: block; }
     .i { padding: 15px; }
     .n { font-weight: bold; color: #60a5fa; margin-bottom: 5px; font-size: 1.1rem; }
     .de { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 10px; }
@@ -43,116 +45,162 @@
 </head>
 <body>
   <div class="c">
-    <h1>🖼️ என் Gallery</h1>
-    <p class="s">உனக்கு மட்டும் தெரியும்... ஆனால் share பண்ணலாம் 💙</p>
+    <h1>என் Gallery</h1>
+    <p class="s">உனக்கு மட்டும் தெரியும்... ஆனால் share பண்ணலாம்</p>
 
+    <!-- Upload - உனக்கு மட்டும் -->
     <div class="up" id="uploadBox">
-      <div class="d" id="dropZone">📤 கோப்பை இழுத்து விடு அல்லது கிளிக் செய்
+      <div class="d" id="dropZone">கோப்பை இழுத்து விடு அல்லது கிளிக் செய்
         <input type="file" id="fileInput" accept="image/*,video/*" hidden />
       </div>
       <div class="p" id="preview"></div>
-      <input type="text" id="nameInput" placeholder="📝 பெயர் (optional)" />
-      <textarea id="descInput" placeholder="💬 விளக்கம்... (optional)" rows="3"></textarea>
-      <button id="uploadBtn" disabled>⬆️ பதிவேற்று</button>
+      <input type="text" id="nameInput" placeholder="பெயர் (optional)" />
+      <textarea id="descInput" placeholder="விளக்கம்... (optional)" rows="3"></textarea>
+      <button id="uploadBtn" disabled>பதிவேற்று</button>
     </div>
 
-    <div class="g" id="gallery"></div>
+    <!-- Full Gallery - உனக்கு மட்டும் -->
+    <div id="fullGallery"></div>
+
+    <!-- Public View - Share Link-க்கு -->
+    <div id="publicView" style="display:none;"></div>
   </div>
 
   <script>
     const REPO = 'adflyaa/theepika_sweety';
-    const DATA_PATH = 'docs/data.json';
-    const PASSWORD = 'uu934587kk';
-    
+    const DATA_PATH = 'data.json';  // root-ல
+    const PASSWORD = 'uu934587kk';  // உனக்கு மட்டும் தெரியும்
+
     let files = [];
     let likes = JSON.parse(localStorage.getItem('likes') || '{}');
     let isAdmin = false;
 
-    const pwd = prompt('🔒 Password enter பண்ணு:');
+    // Password check
+    const pwd = prompt('Password?');
     if (pwd === PASSWORD) {
       isAdmin = true;
       document.getElementById('uploadBox').classList.add('show');
     }
 
+    // Check if it's a shared link
+    const urlParams = new URLSearchParams(location.search);
+    const shareId = urlParams.get('id');
+
     async function loadData() {
       try {
         const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/${DATA_PATH}?t=${Date.now()}`);
         files = await res.json();
-        renderGallery();
+        if (shareId) {
+          showPublicView(shareId);
+        } else if (isAdmin) {
+          showFullGallery();
+        } else {
+          document.getElementById('fullGallery').innerHTML = '<div class="e">இந்த Gallery தனிப்பட்டது. உரிமையாளரால் மட்டும் பார்க்க முடியும்.</div>';
+        }
         trackViews();
       } catch (err) {
-        console.error('Load error:', err);
-        document.getElementById('gallery').innerHTML = '<div class="e">📭 இன்னும் கோப்புகள் இல்லை</div>';
+        console.error(err);
+        document.getElementById('fullGallery').innerHTML = '<div class="e">இன்னும் கோப்புகள் இல்லை</div>';
       }
     }
 
-    function renderGallery() {
-      const urlId = new URLSearchParams(location.search).get('id');
-      document.getElementById('gallery').innerHTML = files.map((f, i) => `
-        <div class="cd" ${f.id === urlId ? 'style="border:3px solid #60a5fa;"' : ''}>
-          ${f.type.startsWith('image') 
-            ? `<img src="${f.data}" class="m" alt="${f.name}">` 
-            : `<video src="${f.data}" class="m" controls></video>`}
+    function showFullGallery() {
+      const html = files.map((f, i) => `
+        <div class="cd">
+          ${f.type.startsWith('image') ? `<img src="${f.data}" class="m">` : `<video src="${f.data}" class="m" controls></video>`}
           <div class="i">
             <div class="n">${f.name}</div>
             ${f.desc ? `<div class="de">${f.desc}</div>` : ''}
             <div class="st">
-              <span>👁️ Views: ${f.views || 0}</span>
+              <span>Views: ${f.views || 0}</span>
               <div class="l ${likes[f.id] ? 'liked' : ''}" onclick="toggleLike(${i})">
-                ${likes[f.id] ? '❤️ Liked' : '🤍 Like'} (${f.likes || 0})
+                ${likes[f.id] ? 'Liked' : 'Like'} (${f.likes || 0})
               </div>
             </div>
             <div class="a">
-              <button class="b" style="background:#10b981" onclick="downloadFile(${i})">⬇️ Download</button>
-              <button class="b" style="background:#3b82f6" onclick="shareFile(${i})">🔗 Share</button>
+              <button class="b" style="background:#10b981" onclick="downloadFile(${i})">Download</button>
+              <button class="b" style="background:#3b82f6" onclick="shareFile(${i})">Share</button>
             </div>
           </div>
         </div>
       `).join('');
+      document.getElementById('fullGallery').innerHTML = html || '<div class="e">இன்னும் கோப்புகள் இல்லை</div>';
+    }
+
+    function showPublicView(id) {
+      const file = files.find(f => f.id === id);
+      if (!file) {
+        document.getElementById('publicView').innerHTML = '<div class="e">கோப்பு கிடைக்கவில்லை</div>';
+        document.getElementById('publicView').style.display = 'block';
+        return;
+      }
+
+      const index = files.indexOf(file);
+      const html = `
+        <div class="cd" style="max-width:600px; margin:0 auto;">
+          ${file.type.startsWith('image') ? `<img src="${file.data}" class="m">` : `<video src="${file.data}" class="m" controls></video>`}
+          <div class="i">
+            <div class="n">${file.name}</div>
+            ${file.desc ? `<div class="de">${file.desc}</div>` : ''}
+            <div class="st">
+              <span>Views: ${file.views || 0}</span>
+              <div class="l ${likes[file.id] ? 'liked' : ''}" onclick="toggleLike(${index})">
+                ${likes[file.id] ? 'Liked' : 'Like'} (${file.likes || 0})
+              </div>
+            </div>
+            <div class="a">
+              <button class="b" style="background:#10b981" onclick="downloadFile(${index})">Download</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('publicView').innerHTML = html;
+      document.getElementById('publicView').style.display = 'block';
+      document.getElementById('fullGallery').style.display = 'none';
     }
 
     function toggleLike(index) {
       const fileId = files[index].id;
       if (likes[fileId]) {
-        showToast('⚠️ ஏற்கனவே like போட்டாய்!', true);
+        showToast('ஏற்கனவே like போட்டாய்!', true);
         return;
       }
       files[index].likes = (files[index].likes || 0) + 1;
       likes[fileId] = true;
       localStorage.setItem('likes', JSON.stringify(likes));
       updateData();
-      renderGallery();
-      showToast('❤️ Like போட்டாய்!');
+      if (shareId) showPublicView(shareId);
+      else showFullGallery();
+      showToast('Like போட்டாய்!');
     }
 
     function shareFile(index) {
       const file = files[index];
       const url = `${location.origin}${location.pathname}?id=${file.id}`;
-      navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copied! WhatsApp-ல் paste செய்'));
-      if (navigator.share) {
-        navigator.share({ title: file.name, text: file.desc || 'Check out this!', url });
-      }
+      navigator.clipboard.writeText(url);
+      showToast('Link copied! WhatsApp-ல் paste செய்');
+      if (navigator.share) navigator.share({ title: file.name, url });
     }
 
     function downloadFile(index) {
       const file = files[index];
       const a = document.createElement('a');
-      a.href = file.data;
-      a.download = file.name;
-      a.click();
-      showToast('⬇️ Download start!');
+      a.href = file.data; a.download = file.name; a.click();
     }
 
     function trackViews() {
-      const sessionViews = JSON.parse(sessionStorage.getItem('views') || '{}');
-      files.forEach(f => {
-        if (!sessionViews[f.id]) {
-          f.views = (f.views || 0) + 1;
-          sessionViews[f.id] = true;
+      if (shareId) {
+        const sessionViews = JSON.parse(sessionStorage.getItem('views') || '{}');
+        if (!sessionViews[shareId]) {
+          const file = files.find(f => f.id === shareId);
+          if (file) {
+            file.views = (file.views || 0) + 1;
+            sessionViews[shareId] = true;
+            sessionStorage.setItem('views', JSON.stringify(sessionViews));
+            updateData();
+          }
         }
-      });
-      sessionStorage.setItem('views', JSON.stringify(sessionViews));
-      updateData();
+      }
     }
 
     async function updateData() {
@@ -162,29 +210,25 @@
         const shaData = await shaRes.json();
         await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
           method: 'PUT',
-          headers: {
-            'Authorization': 'token GH_PAT_WILL_BE_HERE',
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Authorization': 'token GH_PAT_WILL_BE_HERE', 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: 'Update gallery data',
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(files, null, 2)))),
+            message: 'Update views/likes',
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(files)))),
             sha: shaData.sha
           })
         });
-      } catch (err) { console.error('Update error:', err); }
+      } catch (err) { console.error(err); }
     }
 
+    // Upload (Admin only)
     document.getElementById('dropZone').onclick = () => document.getElementById('fileInput').click();
-    document.getElementById('fileInput').onchange = (e) => {
+    document.getElementById('fileInput').onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        const previewHtml = file.type.startsWith('image')
-          ? `<img src="${ev.target.result}">`
-          : `<video src="${ev.target.result}" controls></video>`;
-        document.getElementById('preview').innerHTML = previewHtml;
+      reader.onload = ev => {
+        const preview = file.type.startsWith('image') ? `<img src="${ev.target.result}">` : `<video src="${ev.target.result}" controls></video>`;
+        document.getElementById('preview').innerHTML = preview;
         document.getElementById('uploadBtn').disabled = false;
       };
       reader.readAsDataURL(file);
@@ -192,38 +236,40 @@
 
     document.getElementById('uploadBtn').onclick = () => {
       const file = document.getElementById('fileInput').files[0];
-      if (!file) return;
       const name = document.getElementById('nameInput').value || file.name;
       const desc = document.getElementById('descInput').value;
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        const newFile = {
+      reader.onload = ev => {
+        files.unshift({
           id: Date.now().toString(),
-          name, desc,
-          data: ev.target.result, type: file.type, likes: 0, views: 0
-        };
-        files.unshift(newFile);
+          name, desc, data: ev.target.result, type: file.type,
+          likes: 0, views: 0
+        });
         updateData();
         loadData();
-        document.getElementById('preview').innerHTML = '';
-        document.getElementById('nameInput').value = '';
-        document.getElementById('descInput').value = '';
-        document.getElementById('fileInput').value = '';
-        document.getElementById('uploadBtn').disabled = true;
-        showToast('✅ பதிவேற்றம் வெற்றி!');
+        clearUpload();
+        showToast('பதிவேற்றம் வெற்றி!');
       };
       reader.readAsDataURL(file);
     };
 
-    function showToast(message, isError = false) {
-      const toast = document.createElement('div');
-      toast.className = 't' + (isError ? ' err' : '');
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+    function clearUpload() {
+      document.getElementById('preview').innerHTML = '';
+      document.getElementById('nameInput').value = '';
+      document.getElementById('descInput').value = '';
+      document.getElementById('fileInput').value = '';
+      document.getElementById('uploadBtn').disabled = true;
+    }
+
+    function showToast(msg, err = false) {
+      const t = document.createElement('div');
+      t.className = 't' + (err ? ' err' : '');
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
     }
 
     loadData();
   </script>
 </body>
-    </html>
+  </html>
